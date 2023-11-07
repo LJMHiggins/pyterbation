@@ -37,8 +37,8 @@ def retrieve_data():
 def lm_fit_xdf(df, y):
     """Fit linear model to a dataframe of independent variables veruse a single vector (dependent variable)
     Args: 
-        df: Pandas dataframe
-        y: dataframe or series with ids to merge with df.
+        df: (pd.DataFrame) Dataframe of dependent variables, with common colum.
+        y: (pd.DataFrame) Dataframe with ids to merge with df.
     Returns:
         pd.Dataframe of model parameters.
     """
@@ -74,7 +74,15 @@ def lm_fit_xdf(df, y):
     df_lms = df_match.apply(lm_fit, args = (y.iloc[:,0],), axis = 0) # iloc seems to solve it
     return df_lms.T
 
+#### Spearman rank analysis ####
 def spearman_xdf(df, y):
+    """ Perform Spearman Correlation.
+    Args: 
+        df: (pd.DataFrame) Dataframe of dependent variables for Spearman analysis.
+        y: (pd.DataFrame).
+    Returns:
+        pd.Dataframe of model parameters.
+    """
     def spearman_calc(x_col, y_var):
         mask = ~np.isnan(x_col) & ~np.isnan(y_var)
         try:
@@ -119,7 +127,6 @@ def lin_func_df(df1, df2):
         print("At RNAi {0}, number {1}".format(gene, i+1)) #Would be good to identify the core performing each calculation
     return gene_dict
 
-#### Coeffienct volcano
 def coefficient_volcano(df, 
                         x, 
                         y,
@@ -128,7 +135,19 @@ def coefficient_volcano(df,
                         x_label = None, 
                         label_points = True,
                         cmap = "viridis"):
-    ## Plot construction ##
+    """Plot volcano plot of correlation analysis hits.
+    Args: 
+        df: (pd.DataFrame) Correlation analysis output.
+        x: (str) Column name of x variable.
+        y: (str) Column name of y variable.
+        reg_or_corr: (str) Indication of whether to plot regression coefficients ("reg") or correlation coeffiecients ("corr")
+        title: (str) Plot title.
+        x_label: (str) X axis label.
+        label_points: (Bool) Whether or not to label top hits.
+        cmap: (str) Colour scheme for plot.
+    Returns:
+        matplotlib volcano plot.
+    """
     df["p_value_transformed"] = -np.log10(df[y].astype(float))
     fig, ax = plt.subplots(figsize=(10, 8))
     if reg_or_corr == "reg":
@@ -159,19 +178,19 @@ def coefficient_volcano(df,
     if title is not None:
         ax.set_title(title)
         
-    ax.set_ylabel('-log10(p value)') 
+    ax.set_ylabel("-log10(p value)") 
     threshold = -np.log10(0.05)
-    ax.axhline(threshold, color='red', linestyle='--', label='Threshold: -log10(0.05)')
-    ax.spines['top'].set_linewidth(2)
-    ax.spines['right'].set_linewidth(2)
-    ax.spines['bottom'].set_linewidth(2)
-    ax.spines['left'].set_linewidth(2)
-    border_color = '#808080'
-    ax.spines['top'].set_color(border_color)
-    ax.spines['right'].set_color(border_color)
-    ax.spines['bottom'].set_color(border_color)
-    ax.spines['left'].set_color(border_color)
-    ax.grid(True, linestyle='-', linewidth=0.5, color='lightgrey')
+    ax.axhline(threshold, color="red", linestyle="--", label="Threshold: -log10(0.05)")
+    ax.spines["top"].set_linewidth(1)
+    ax.spines["right"].set_linewidth(1)
+    ax.spines["bottom"].set_linewidth(1)
+    ax.spines["left"].set_linewidth(1)
+    border_color = "black"
+    ax.spines["top"].set_color(border_color)
+    ax.spines["right"].set_color(border_color)
+    ax.spines["bottom"].set_color(border_color)
+    ax.spines["left"].set_color(border_color)
+    ax.grid(True, linestyle='-', linewidth=0.5, color="lightgrey")
     ## Point labelling ##
     if label_points:
         x_threshold = 0.3  # Change this to your desired x threshold
@@ -179,12 +198,12 @@ def coefficient_volcano(df,
         # Label the top points that exceed the given x and y value thresholds
         texts = []
         for index, row in df.iterrows():
-            if (row[x] > x_threshold or row[x] < -x_threshold) and row['p_value_transformed'] > y_threshold:
-                text = plt.text(row[x], row['p_value_transformed'], f"({row['x_id']})", ha='right')
+            if (row[x] > x_threshold or row[x] < -x_threshold) and row["p_value_transformed"] > y_threshold:
+                text = plt.text(row[x], row["p_value_transformed"], f"({row['x_id']})", ha="right")
                 texts.append(text)
         # Use adjust_text to perform text repulsion and move only the labels up
-        adjust_text(texts, arrowprops=dict(arrowstyle='->', color='black', lw=0.5), 
-                    only_move={'points':'+y', 'text':'+y'},
+        adjust_text(texts, arrowprops=dict(arrowstyle="->", color='black', lw=0.5), 
+                    only_move={"points":"+y", "text":"+y"},
                     force_text=(1, 2))
     # Increase axes span to accommodate text labels
     ax.set_xlim(ax.get_xlim()[0] - 0.5, ax.get_xlim()[1] + 0.5)
@@ -192,12 +211,23 @@ def coefficient_volcano(df,
 
     plt.show()
 
+
 #### Regression plot ####
 def scatter_plot_with_regression(df, 
                                  x_label, 
                                  y_label, 
                                  ax = None,
                                  title = None):
+    """Scatter plot.
+    Args: 
+        df: (pd.DataFrame) Merged x and y datasets.
+        x_label: (str) Column name of x variable.
+        y_label: (str) Column name of y variable.
+        ax: (matplotlib.axes._subplots.AxesSubplot) ax object for use when plotting panel.
+        title: (str) Plot title.
+    Returns:
+        matplotlib scatter plot.
+    """
     if ax is None:
         fig, ax = plt.subplots() 
     # Extracting data from the DataFrame
@@ -209,43 +239,54 @@ def scatter_plot_with_regression(df,
     spearman_corr, spearman_p_value = stats.spearmanr(x, y)
     # Plotting the scatter plot and the regression line
     ax.scatter(x, y, color="#000000", alpha=0.7, label =None)
-    ax.plot(x, line, color='#FF7F50', alpha=0.7, label =None)
+    ax.plot(x, line, color="#FF7F50", alpha=0.7, label =None)
     # Adding labels and title
     ax.set_xlabel(x_label)
     if title is not None:
         ax.set_title(title)
     ax.set_xlabel(x_label, fontsize=14)
     ax.set_ylabel(y_label, fontsize=14)
-    ax.set_title(x_label, fontsize=16, weight='bold')
+    ax.set_title(x_label, fontsize=16, weight="bold")
     ax.set_ylim(0, 0.8)
-    # Increasing border thickness
-    ax.spines['top'].set_linewidth(2)
-    ax.spines['right'].set_linewidth(2)
-    ax.spines['bottom'].set_linewidth(2)
-    ax.spines['left'].set_linewidth(2)
+    # Border thickness
+    ax.spines["top"].set_linewidth(1)
+    ax.spines["right"].set_linewidth(1)
+    ax.spines["bottom"].set_linewidth(1)
+    ax.spines["left"].set_linewidth(1)
     # Making the borders darker
-    border_color = '#808080'
-    ax.spines['top'].set_color(border_color)
-    ax.spines['right'].set_color(border_color)
-    ax.spines['bottom'].set_color(border_color)
-    ax.spines['left'].set_color(border_color)
+    border_color = "black"
+    ax.spines["top"].set_color(border_color)
+    ax.spines["right"].set_color(border_color)
+    ax.spines["bottom"].set_color(border_color)
+    ax.spines["left"].set_color(border_color)
     # Adjust tick label font sizes
-    ax.tick_params(axis='x', labelsize=12)
-    ax.tick_params(axis='y', labelsize=12)
+    ax.tick_params(axis="x", labelsize=12)
+    ax.tick_params(axis="y", labelsize=12)
     # Displaying the grid
-    ax.grid(True, linestyle='-', linewidth=0.5, color='lightgrey')
+    ax.grid(True, linestyle="-", linewidth=0.5, color="lightgrey")
     # Displaying the legend
-    legend_text = f'Lin. Reg.: Slope: {slope:.2f}, p-value: {p_value:.4f}\nSpearman: Coef: {spearman_corr:.2f}, p-value: {spearman_p_value:.4f}'
-    ax.text(0.98, 0.95, legend_text, fontsize=13, ha='right', va='top', bbox=dict(facecolor='white', alpha=0.8), transform=ax.transAxes)
+    legend_text = f"Lin. Reg.: Slope: {slope:.2f}, p-value: {p_value:.4f}\nSpearman: Coef: {spearman_corr:.2f}, p-value: {spearman_p_value:.4f}"
+    ax.text(0.98, 0.95, legend_text, fontsize=13, ha="right", va="top", bbox=dict(facecolor="white", alpha=0.8), transform=ax.transAxes)
     
     if ax is None:
         plt.show()
+
 ## Regression panel ##
 def scatter_panel(df,
                   protein_list,
                   y_label,
                   n_cols = 4,
                   figsize = (16, 4)):
+    """Plot scatter plot panel using scatter_plot_with_regression function.
+    Args: 
+        df: (pd.DataFrame) Merged x and y datasets.
+        protein_list: (list) List of protein ids to plot agains y variable.
+        y_label: (str) Column name of y variable.
+        n_cols: (int) Number of columns in facet plot.
+        figsize: (tuple) Panel size dimensions.
+    Returns:
+        matplotlib scatter plot panel.
+    """
     total_graphs = len(protein_list)
     n_rows = (total_graphs + n_cols - 1) // n_cols  # Calculate the number of rows needed
 

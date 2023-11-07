@@ -1,8 +1,30 @@
 ## Retrieve uniprot protein information ##
 import requests
 
+def check_protein_presence(df, protein_id_col, protein_list):
+    """ Check if proteins are present in hit.
+    Args: 
+        df: (pd.DataFrame) Hit results.
+        protein_id_col: (str) Name of column with proteins to check.
+        protein_list: (list) List of proteins to check.
+    Returns:
+        pd.Dataframe of model parameters.
+    """
+    proteins_missing = []
+    for protein in protein_list:
+        count = df[protein_id_col].str.contains(protein).sum()
+        if count == 0:
+            proteins_missing.append(protein)
+    return proteins_missing
+
 ## Using gene names ##
 def fetch_gene_info(gene_list):
+    """ Retrive information on genes.
+    Args: 
+        gene_list: (list) List of genes to retrieve information on.
+    Returns:
+        Nested dictionary of gene information.
+    """
     gene_annotations = {}
     base_url = "http://mygene.info/v3/query"
     for gene in gene_list:
